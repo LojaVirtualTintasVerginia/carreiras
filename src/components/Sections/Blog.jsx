@@ -1,63 +1,58 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import BlogBox from "../Elements/BlogBox";
 import FullButton from "../Buttons/FullButton";
-import Popup from "../Elements/Popup"; // Importe o componente Popup
+import Popup from "../Elements/Popup";
+import api from "../../services/api"; // Importa API do backend
 
-export default function Blog() {
+const Blog = () => {
+  const [vagas, setVagas] = useState([]); // Removendo os tipos <Vaga[]>
   const [popupVisible, setPopupVisible] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const openPopup = (job) => {
-    setSelectedJob(job);
-    setPopupVisible(true);
+  // Buscar vagas na API
+  useEffect(() => {
+    const fetchVagas = async () => {
+      try {
+        const response = await api.get("/");
+        setVagas(response.data);
+      } catch (error) {
+        console.error("Erro ao buscar vagas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchVagas();
+  }, []);
+
+  // Abrir o popup com detalhes da vaga
+  const openPopup = async (jobId) => {
+    try {
+      console.log(`📢 Buscando detalhes da vaga ID: ${jobId}`); // Debug para verificar o ID recebido
+  
+      if (!jobId) {
+        console.error("❌ ID da vaga inválido!");
+        return;
+      }
+  
+      const response = await api.get(`/${jobId}`); // 🔥 Buscar detalhes completos da vaga
+      console.log("📢 Detalhes completos da vaga recebidos no frontend:", response.data); // Debug
+  
+      setSelectedJob(response.data);
+      setPopupVisible(true);
+    } catch (error) {
+      console.error("❌ Erro ao buscar detalhes da vaga:", error);
+    }
   };
 
+  // Fechar popup
   const closePopup = () => {
     setPopupVisible(false);
     setSelectedJob(null);
   };
 
-  const jobs = [
-    {
-      title: "VENDEDOR(A)",
-      location: "Av. Ver. Toaldo Túlio, 2185 - Santa Felicidade, Curitiba - PR",
-      responsibilities: [
-        "Atingir metas de vendas, margem, serviços financeiros e telemarketing, aplicando a política comercial da empresa em seu dia-a-dia;",
-        "Realizar operações de caixa;",
-        "Conhecer com profundidade o mercado onde atua e os produtos que comercializa;",
-        "Encantar e servir aos clientes de forma personalizada e consultiva (desde abordagem, demonstração de produto, negociação, pagamento e entrega do produto);",
-        "Atuar na arrumação e organização dos setores e limpeza dos produtos e expositores;",
-        "Conduzir o processo de atendimento ao cliente, realizar o cartazamento dos setores e operar os sistemas necessários;",
-        "Contribuir com atividades de todos os setores da loja, objetivando o atingimento das metas globais da loja.",
-      ],
-      requirements: [
-        "Ensino Médio Completo;",
-        "Disponibilidade para trabalhar aos finais de semana (escala 6x1);",
-        "Maiores de 18 anos;",
-        "Disponibilidade de horário;",
-      ],
-    },
-    {
-      title: "AUXILIAR ADMINISTRATIVO",
-      location: "Rua XV de Novembro, 123 - Centro, Curitiba - PR",
-      responsibilities: [
-        "Realizar atividades administrativas diversas;",
-        "Auxiliar no controle e organização de documentos e arquivos;",
-        "Atendimento a clientes e fornecedores via telefone e e-mail;",
-        "Apoiar na elaboração de relatórios e planilhas;",
-        "Organizar agenda e compromissos do setor administrativo;",
-        "Realizar lançamentos no sistema e auxiliar na rotina financeira e contábil;",
-      ],
-      requirements: [
-        "Ensino Médio Completo (Superior em Administração será um diferencial);",
-        "Boa comunicação verbal e escrita;",
-        "Conhecimento em Pacote Office;",
-        "Organização e atenção aos detalhes;",
-        "Disponibilidade para trabalhar em horário comercial;",
-      ],
-    },
-  ];
+  
 
   return (
     <Wrapper id="blog">
@@ -66,25 +61,29 @@ export default function Blog() {
           <HeaderInfo>
             <h1 className="font40 extraBold">Vagas na Verginia</h1>
             <p className="font13">
-              Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut
-              <br />
-              labore et dolore magna aliquyam erat, sed diam voluptua.
+              Encontre a sua próxima oportunidade profissional conosco!
             </p>
           </HeaderInfo>
-          <div className="row textCenter">
-            {jobs.map((job, index) => (
-              <div key={index} className="col-xs-12 col-sm-4 col-md-4 col-lg-4">
-                <BlogBox
-                  title={job.title}
-                  text={job.location}
-                  tag="Candidatar-se"
-                  author="Saiba mais"
-                  action={() => openPopup(job)}
-                />
-              </div>
-            ))}
-          </div>
-          
+
+          {loading ? (
+            <p>Carregando vagas...</p>
+          ) : vagas.length > 0 ? (
+            <GridContainer>
+            {vagas.map((vaga) => (
+                  <BlogBox
+                    key={vaga.id}
+                    title={vaga.titulo}
+                    text={vaga.localizacao}
+                    tag="Candidatar-se"
+                    author="Saiba mais"
+                    action={() => openPopup(vaga.id)} // 🔥 Agora passa apenas o ID corretamente
+                  />
+                ))}
+                            </GridContainer>
+          ) : (
+            <p>Nenhuma vaga disponível no momento.</p>
+          )}
+
           <div className="row flexCenter">
             <div style={{ margin: "50px 0", width: "200px" }}>
               <FullButton title="Ver mais" action={() => alert("clicked")} />
@@ -93,35 +92,71 @@ export default function Blog() {
         </div>
       </div>
 
-      {popupVisible && selectedJob && (
-        <Popup onClose={closePopup}>
-          <h2>{selectedJob.title}</h2>
-          <p>{selectedJob.location}</p>
-          <h3>Responsabilidades</h3>
-          <ul>
-            {selectedJob.responsibilities.map((resp, idx) => (
-              <li key={idx}>{resp}</li>
-            ))}
-          </ul>
-          <h3>Requisitos</h3>
-          <ul>
-            {selectedJob.requirements.map((req, idx) => (
-              <li key={idx}>{req}</li>
-            ))}
-          </ul>
-        </Popup>
+{popupVisible && selectedJob && (
+  <Popup onClose={closePopup}>
+    <h2>{selectedJob.titulo}</h2>
+    <p>{selectedJob.localizacao}</p>
+
+    <h3>Responsabilidades</h3>
+    <ul>
+      {selectedJob.responsabilidades && selectedJob.responsabilidades.length > 0 ? (
+        selectedJob.responsabilidades.map((resp, idx) => (
+          <li key={idx}>{resp}</li>
+        ))
+      ) : (
+        <li>Não informado</li>
+      )}
+    </ul>
+
+    <h3>Requisitos</h3>
+    <ul>
+      {selectedJob.requisitos && selectedJob.requisitos.length > 0 ? (
+        selectedJob.requisitos.map((req, idx) => (
+          <li key={idx}>{req}</li>
+        ))
+      ) : (
+        <li>Não informado</li>
+      )}
+    </ul>
+
+  </Popup>
+
+
       )}
     </Wrapper>
   );
-}
+};
 
+// 🎨 Estilos com Styled Components
 const Wrapper = styled.section`
   width: 100%;
   padding-top: 20px;
 `;
+
 const HeaderInfo = styled.div`
   margin-bottom: 30px;
-  @media (max-width: 860px) {
-    text-align: center;
+  text-align: center;
+`;
+
+const GridContainer = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  justify-content: center;
+`;
+
+const Button = styled.a`
+  display: inline-block;
+  margin-top: 10px;
+  padding: 10px 20px;
+  background: ${(props) => props.color || "#007BFF"};
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.8;
   }
 `;
+
+export default Blog;
