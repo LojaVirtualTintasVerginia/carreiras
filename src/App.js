@@ -4,6 +4,7 @@ import { Helmet } from "react-helmet";
 // Screens
 import Landing from "./screens/Landing";
 import NovaVaga from "./components/Sections/NovaVaga"; // Importa a nova página
+import GerenciarVagas from "./components/Sections/GerenciarVagas"; 
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/nova-vaga" element={<NovaVaga />} /> {/* 🔥 Nova rota */}
+        <Route path="/gerenciar-vagas" element={<GerenciarVagas />} />
       </Routes>
     </Router>
   );
