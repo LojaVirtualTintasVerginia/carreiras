@@ -1,5 +1,8 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { 
+      "source": "/(.*)", "destination": "/index.html",
+       "destination": "https://carreira-api-production.up.railway.app/:path*"
+    }
   ]
 }
